@@ -7,7 +7,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
+import java.security.MessageDigest;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
@@ -16,8 +18,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class MainActivity extends AppCompatActivity {
     private final static String IV = "AAAAAAAAAAAAAAAA";
-    private final static String KEY = "0123456789abcdef";
-    private EditText edtEncrypt, edtDecrypt;
+    private EditText edtEncrypt, edtDecrypt, edtEnKey, edtDeKey;
     private ImageButton imgBtnEn, imgBtnDe;
 
     @Override
@@ -27,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
 
         edtEncrypt = (EditText) findViewById(R.id.edtEncrypt);
         edtDecrypt = (EditText) findViewById(R.id.edtDecrypt);
+        edtEnKey = (EditText) findViewById(R.id.edtEnKey);
+        edtDeKey = (EditText) findViewById(R.id.edtDeKey);
         imgBtnEn = (ImageButton) findViewById(R.id.imgBtnEn);
         imgBtnDe = (ImageButton) findViewById(R.id.imgBtnDe);
 
@@ -40,11 +43,14 @@ public class MainActivity extends AppCompatActivity {
             byte[] TextByte = new byte[0];
             String encryptText = "";
             try {
-                TextByte = EncryptAES(IV.getBytes("UTF-8"), KEY.getBytes("UTF-8"), edtEncrypt.getText().toString().getBytes("UTF-8"));
+                  TextByte = EncryptAES(IV.getBytes("UTF-8"), Hash_MD5(edtEnKey.getText().toString()), edtEncrypt.getText().toString().getBytes("UTF-8"));
                 encryptText = Base64.encodeToString(TextByte, Base64.DEFAULT);
                 edtDecrypt.setText(encryptText);
+                edtDeKey.setText(edtEnKey.getText().toString());
             } catch (Exception e) {
-                edtDecrypt.setText("");
+                edtDecrypt.setText(null);
+                edtDeKey.setText(null);
+                Toast.makeText(MainActivity.this,"加密失敗!",Toast.LENGTH_SHORT).show();
                 Log.e("imgBtnEn", e.toString());
             }
         }
@@ -56,16 +62,19 @@ public class MainActivity extends AppCompatActivity {
             byte[] TextByte = new byte[0];
             String decryptText = "";
             try {
-                TextByte = DecryptAES(IV.getBytes("UTF-8"), KEY.getBytes("UTF-8"), Base64.decode(edtDecrypt.getText().toString().getBytes("UTF-8"), Base64.DEFAULT));
+                TextByte = DecryptAES(IV.getBytes("UTF-8"), Hash_MD5(edtDeKey.getText().toString()), Base64.decode(edtDecrypt.getText().toString().getBytes("UTF-8"), Base64.DEFAULT));
                 decryptText = new String(TextByte, "UTF-8");
                 edtEncrypt.setText(decryptText);
+                edtEnKey.setText(edtDeKey.getText().toString());
             } catch (Exception e) {
-                edtEncrypt.setText("");
+                edtEncrypt.setText(null);
+                edtEnKey.setText(null);
+                Toast.makeText(MainActivity.this,"解密失敗!",Toast.LENGTH_SHORT).show();
                 Log.e("ImgBtnDe", e.toString());
             }
         }
     };
-
+    //AES加密，帶入byte[]型態的16位英數組合文字、32位英數組合Key、需加密文字
     private static byte[] EncryptAES(byte[] iv, byte[] key, byte[] text) {
         try {
             AlgorithmParameterSpec mAlgorithmParameterSpec = new IvParameterSpec(iv);
@@ -95,69 +104,17 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
     }
-
-
-//    public static byte[] encrypt(String plainText, String encryptionKey) throws Exception {
-//        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-//        SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
-//        cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(IV.getBytes("UTF-8")));
-//        return cipher.doFinal(plainText.getBytes("UTF-8"));
-//    }
-//
-//    public static String decrypt(byte[] cipherText, String encryptionKey) throws Exception {
-//        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-//        SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
-//        cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(IV.getBytes("UTF-8")));
-//        return new String(cipher.doFinal(cipherText), "UTF-8");
-//    }
-
-
-//    public String encrypt(String key, String initVector, String value) {
-//        try {
-//
-//            IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-//            SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
-//
-//            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-//            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
-//
-//            byte[] encrypted = cipher.doFinal(value.getBytes());
-//            return Base64.encodeToString(encrypted,Base64.DEFAULT);
-//        } catch (Exception e) {
-//            Log.e("Encrypt",e.toString());
-//        }
-//
-//        return null;
-//    }
-//
-//    public String decrypt(String key, String initVector, String encrypted) {
-//        try {
-//            IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-//            SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
-//
-//            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-//            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
-//
-//            byte[] original = cipher.doFinal(Base64.decode(encrypted, Base64.DEFAULT));
-//
-//            return new String(original);
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//        }
-//
-//        return null;
-//    }
-
-//    public byte[] Hash_MD5 (String input){
-//        byte[] bytesInput = input.getBytes();
-//        try{
-//            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-//            messageDigest.update(bytesInput);
-//            byte[] hashInput = messageDigest.digest();
-//            return hashInput;
-//        }catch (Exception e){
-//            Log.e("HASH",e.toString());
-//        }
-//        return null;
-//    }
+    //Hash字串並回傳byte[]
+    public byte[] Hash_MD5 (String input){
+        byte[] bytesInput = input.getBytes();
+        try{
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            messageDigest.update(bytesInput);
+            byte[] hashInput = messageDigest.digest();
+            return hashInput;
+        }catch (Exception e){
+            Log.e("HASH",e.toString());
+        }
+        return null;
+    }
 }
