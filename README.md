@@ -29,7 +29,7 @@ APP介面主要為四個EditView與兩個ImageButton
 **輸入錯誤金鑰會有錯誤提示**
 
 
-<img src="https://github.com/whatthefun/AES_CBC/blob/master/pic_demo/newCipher.jpg" width="300" height="400">
+<img src="https://github.com/whatthefun/AES_CBC/blob/master/pic_demo/newText.jpg" width="300" height="400">
 <img src="https://github.com/whatthefun/AES_CBC/blob/master/pic_demo/newCipher.jpg" width="300" height="400">
 **新的明文會產生新的密文哦~**
 
